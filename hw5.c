@@ -44,16 +44,21 @@ void handle_connection(int clientfd) {
     memset(request, 0x00, sizeof(request));
     // printf("here in handle_connection");
     // Reading the client's request.
-    ssize_t bytes_read = Read(clientfd, request, RMAX);
+    ssize_t bytes_read = Recv(clientfd, request, RMAX, 0);
     // printf("Request: %s\n", request);
-  
+    
+    if (bytes_read == RMAX) {
 
-    if (bytes_read >= RMAX + 1) {
-        printf("here in stack smash\n");
-        raise_http_error(413,  &HSIZE, &BSIZE, header, body);
-        Send(clientfd);
-        close(clientfd);
-        return;
+        char peek[1];
+        ssize_t peek_bytes = Recv(clientfd, peek, 1, MSG_PEEK);
+
+        if (peek_bytes > 0) {
+            printf("here in stack smash\n");
+            raise_http_error(413,  &HSIZE, &BSIZE, header, body);
+            Send(clientfd);
+            close(clientfd);
+            return;
+        }
     }
 
     if (bytes_read <= 0) {

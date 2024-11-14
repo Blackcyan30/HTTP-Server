@@ -7,5 +7,5 @@ void Listen(int sockfd, int backlog);
 void configure_socket(int sockfd);
 int Accept(int listenfd);
 ssize_t Read(int fd, void* buffer, size_t count);
-
+ssize_t Recv(int sockfd, void* buffer, size_t length, int flags);
 #endif

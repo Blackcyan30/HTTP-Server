@@ -55,7 +55,9 @@ void configure_socket(int sockfd) {
     }
 }
 
-
+/// @brief 
+/// @param listenfd 
+/// @return 
 int Accept(int listenfd) {
     struct sockaddr_in client_addr;
     socklen_t client_len;
@@ -72,14 +74,30 @@ int Accept(int listenfd) {
     return clientfd;
 }
 
-ssize_t Read(int fd, void* buffer, size_t count) {
-    ssize_t bytes_read = read(fd, buffer, count);
-    if (bytes_read < 0) {
-        perror("Read failed");
-        close(fd);
+ssize_t Recv(int sockfd, void* buffer, size_t length, int flags) {
+    ssize_t bytes_recieved = recv(sockfd, buffer, length, flags);
+
+    if (bytes_recieved < 0) {
+        printf("Recv Failed.\n");
+        close(sockfd);
         exit(EXIT_FAILURE);
     }
-    printf("Read %zd bytes\n", bytes_read);
 
-    return bytes_read;
+    return bytes_recieved;
 }
+
+
+
+
+
+// ssize_t Read(int fd, void* buffer, size_t count) {
+//     ssize_t bytes_read = read(fd, buffer, count);
+//     if (bytes_read < 0) {
+//         perror("Read failed");
+//         close(fd);
+//         exit(EXIT_FAILURE);
+//     }
+//     printf("Read %zd bytes\n", bytes_read);
+
+//     return bytes_read;
+// }
