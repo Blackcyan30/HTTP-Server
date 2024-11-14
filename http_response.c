@@ -22,13 +22,13 @@ extern char body[BMAX];
 /// @return 
 void generate_response(const char* method, const char* path) {
     if (strstr(request, "\r\n\r\n") == NULL) {
-        printf("Here in invalid req \n");
+        // printf("Here in invalid req \n");
         raise_http_error(400, &HSIZE, &BSIZE, header, body);
         return;
     }
 
     if (strcmp(method, "GET") == 0 && strcmp(path, "/ping") == 0) {
-        printf("Here in ping\n");
+        // printf("Here in ping\n");
         // Setting header for /ping.
         HSIZE = snprintf(header, HMAX,
             "HTTP/1.1 200 OK\r\n"
@@ -82,10 +82,10 @@ static void send_data(int clientfd, char buf[], int size) {
 /// @brief 
 /// @param clientfd 
 void Send(int clientfd) {
-    printf("Sending header:\n%s", header);
+    // printf("Sending header:\n%s", header);
     send_data(clientfd, header, HSIZE);
-    printf("Sending body:\n%s", body);
+    // printf("Sending body:\n%s", body);
     send_data(clientfd, body, BSIZE);
-    printf("Body sent\n");
+    // printf("Body sent\n");
 }
 

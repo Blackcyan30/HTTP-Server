@@ -57,6 +57,7 @@ void handle_connection(int clientfd) {
             raise_http_error(413,  &HSIZE, &BSIZE, header, body);
             Send(clientfd);
             close(clientfd);
+            // exit(EXIT_FAILURE);
             return;
         }
     }
@@ -77,7 +78,7 @@ void handle_connection(int clientfd) {
     // Parsing http method and path. 
     char method[1024];
     char path[1024];
-    printf("Request: %s\n", request);
+    // printf("Request: %s\n", request);
     if (parse_request(request, method, 1024, path, 1024) < 0){
         printf("parse_requst failed\n");
         raise_http_error(400, &HSIZE, &BSIZE,  header, body);
