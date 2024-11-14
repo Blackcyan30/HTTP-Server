@@ -46,13 +46,25 @@ void handle_connection(int clientfd) {
     // Reading the client's request.
     ssize_t bytes_read = Read(clientfd, request, RMAX);
     printf("Request: %s\n", request);
-     if (bytes_read <= 0) {
+  
+
+    if (bytes_read >= RMAX + 1) {
+        printf("here in stack smash\n");
+        raise_http_error(413,  &HSIZE, &BSIZE, header, body);
+        Send(clientfd);
+        close(clientfd);
+        return;
+    }
+
+    if (bytes_read <= 0) {
         printf("No request data received\n"); 
         raise_http_error(400, &HSIZE, &BSIZE, header, body);
         Send(clientfd);
         close(clientfd);
         return;
     }
+
+
     request[bytes_read] = '\0';
     
     // printf("Recieved request:\n%s\n", request);
