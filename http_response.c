@@ -22,7 +22,7 @@ extern char body[BMAX];
 /// @return 
 void generate_response(const char* method, const char* path) {
     if (strstr(request, "\r\n\r\n") == NULL) {
-        print("Here in invalid req \n");
+        printf("Here in invalid req \n");
         raise_http_error(400, &HSIZE, &BSIZE, header, body);
         return;
     }
