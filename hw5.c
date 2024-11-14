@@ -45,7 +45,7 @@ void handle_connection(int clientfd) {
     // printf("here in handle_connection");
     // Reading the client's request.
     ssize_t bytes_read = Read(clientfd, request, RMAX);
-    printf("Request: %s\n", request);
+    // printf("Request: %s\n", request);
   
 
     if (bytes_read >= RMAX + 1) {
