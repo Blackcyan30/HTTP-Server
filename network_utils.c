@@ -1,3 +1,6 @@
+/// @file network_utils.c
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -86,6 +89,17 @@ ssize_t Recv(int sockfd, void* buffer, size_t length, int flags) {
     return bytes_recieved;
 }
 
+void* Malloc(size_t size) {
+    void* ptr = malloc(size);
+
+    if (!ptr) {
+        printf("Failed to allocate memory\n");
+        free(ptr);
+        exit(EXIT_FAILURE);
+    }
+
+    return ptr;
+}
 
 
 

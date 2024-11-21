@@ -1,3 +1,6 @@
+/// @file hw5.c
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,14 +16,17 @@
 #include "http_response.h"
 #include "constants.h"
 #include "http_errors.h"
+#include "http_debug.h"
 
 char request[RMAX+1];
-
+ssize_t request_size;
 int HSIZE = 0;
 char header[HMAX];
 
 int BSIZE = 0;
 char body[BMAX];
+
+// void print_request(const char* request, size_t request_size);
 
 int initialize_server(int port) {
     // Creating the socket and setting socket option.
@@ -45,10 +51,11 @@ void handle_connection(int clientfd) {
     // printf("here in handle_connection");
     // Reading the client's request.
     ssize_t bytes_read = Recv(clientfd, request, RMAX, 0);
+    request_size = bytes_read;
     // printf("Request: %s\n", request);
-    
-    if (bytes_read == RMAX) {
 
+    if (bytes_read == RMAX) {
+        printf("Read bytes equal to RMAX\n");
         char peek[1];
         ssize_t peek_bytes = Recv(clientfd, peek, 1, MSG_PEEK);
 
@@ -57,23 +64,24 @@ void handle_connection(int clientfd) {
             raise_http_error(413,  &HSIZE, &BSIZE, header, body);
             Send(clientfd);
             close(clientfd);
-            // exit(EXIT_FAILURE);
             return;
         }
     }
 
     if (bytes_read <= 0) {
-        printf("No request data received\n"); 
-        raise_http_error(400, &HSIZE, &BSIZE, header, body);
-        Send(clientfd);
+        // printf("No request data received\n"); 
+        // raise_http_error(400, &HSIZE, &BSIZE, header, body);
+        // Send(clientfd);
         close(clientfd);
         return;
     }
 
-
-    request[bytes_read] = '\0';
     
-    // printf("Recieved request:\n%s\n", request);
+    request[bytes_read] = '\0';
+
+    // print_request(request, bytes_read);
+    
+    // printf("\n\nRecieved request:\n%s\n\n", request);
 
     // Parsing http method and path. 
     char method[1024];
@@ -81,7 +89,7 @@ void handle_connection(int clientfd) {
     // printf("Request: %s\n", request);
     if (parse_request(request, method, 1024, path, 1024) < 0){
         printf("parse_requst failed\n");
-        raise_http_error(400, &HSIZE, &BSIZE,  header, body);
+        raise_http_error(BAD_REQUEST, &HSIZE, &BSIZE,  header, body);
         Send(clientfd);
         close(clientfd);
         return;
@@ -89,7 +97,7 @@ void handle_connection(int clientfd) {
 
     // printf("Parsed method: %s, path: %s\n", method, path);
     // Generating response
-    printf("Method: %s\n Path: %s", method, path);
+    // printf("Method: %s\n Path: %s", method, path);
     generate_response(method, path);
 
     // Sending response;

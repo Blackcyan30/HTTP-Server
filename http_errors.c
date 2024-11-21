@@ -1,3 +1,5 @@
+/// @file http_errors.c
+
 #include <stdio.h>
 #include <string.h>
 #include "http_errors.h"
@@ -22,21 +24,20 @@ static void request_entity_too_large(int* HSIZE, int* BSIZE, char* header, char*
 static void request_not_found(int* HSIZE, int* BSIZE, char* header, char* body) {
     *HSIZE = snprintf(header, HMAX, 
         "HTTP/1.1 404 Not Found\r\n"
-        "Content-Length: 13\r\n"
         "\r\n"
     );
-    *BSIZE = snprintf(body, BMAX, "404 Not Found");
+    *BSIZE = 0;
 }
 
 void raise_http_error(int error_code, int* HSIZE, int* BSIZE, char* header, char* body) {
     switch(error_code) {
-        case 400:
+        case BAD_REQUEST:
             bad_request(HSIZE, BSIZE, header, body);
             break;
-        case 413:
+        case ENTITY_TOO_LARGE:
             request_entity_too_large(HSIZE, BSIZE, header, body);
             break;
-        case 404:
+        case NOT_FOUND:
             request_not_found(HSIZE, BSIZE, header, body);
             break;
         default:
