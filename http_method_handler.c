@@ -16,6 +16,7 @@
 #include "network_utils.h"
 #include "http_method_handler.h"
 
+
 extern int HSIZE;
 extern int BSIZE;
 extern char request[RMAX+1];
@@ -25,21 +26,21 @@ extern char body[BMAX];
 response_manager_t response_manager;
 storage_t* server_storage = NULL;
 
-static void handle_ping();
-static void handle_echo();
-static void handle_read();
-static void handle_write();
+static void handle_ping(client_session_t* client_info);
+static void handle_echo(client_session_t* client_info);
+static void handle_read(client_session_t* client_info);
+static void handle_write(client_session_t* client_info);
 static void handle_common_get(const char* path);
 static void set_header(size_t content_length);
 // static void set_body(char* content, size_t content_length);
 
-void handle_get(const char* path) {
+void handle_get(const char* path, client_session_t* client_info) {
     if (strcmp(path, "/ping") == 0) {
-        handle_ping();
+        handle_ping(client_info);
     } else if (strcmp(path, "/echo") == 0) {
-        handle_echo();
+        handle_echo(client_info);
     } else if (strcmp(path, "/read") == 0) {
-        handle_read();
+        handle_read(client_info);
     } else {
         handle_common_get(path);
     }
@@ -54,7 +55,7 @@ void handle_post(const char* path) {
 }
 
 
-static void handle_ping() {
+static void handle_ping(client_session_t* client_info) {
     // Setting header for /ping.
     HSIZE = snprintf(header, HMAX,
         "HTTP/1.1 200 OK\r\n"
@@ -66,7 +67,7 @@ static void handle_ping() {
     BSIZE = snprintf(body, BMAX + 1, "pong");
 }
 
-static void handle_echo() {
+static void handle_echo(client_session_t* client_info) {
     char header_recieved[HMAX];
     int status = parse_headers(request, header_recieved, HMAX);
 
@@ -91,7 +92,7 @@ static void handle_echo() {
     BSIZE = snprintf(body, BMAX + 1, "%s", header_recieved);
 }
 
-static void handle_write() {
+static void handle_write(client_session_t* client_info) {
     int content_length = extract_content_length(request);
     size_t to_store_len = content_length;
     if (content_length < 0) {
@@ -156,7 +157,7 @@ static void handle_write() {
     BSIZE = content_length;
 }
 
-static void handle_read() {
+static void handle_read(client_session_t* client_info) {
     if (!server_storage || server_storage->length == 0) {
         HSIZE = snprintf(header, HMAX,
             "HTTP/1.1 200 OK\r\n"

@@ -24,7 +24,7 @@ extern response_manager_t response_manager;
 /// @param method 
 /// @param path 
 /// @return void
-void generate_response(const char* method, const char* path) {
+void generate_response(const char* method, const char* path, client_session_t* client_info) {
     if (strstr(request, "\r\n\r\n") == NULL) {
         // printf("Here in invalid req \n");
         raise_http_error(400, &HSIZE, &BSIZE, header, body);
@@ -32,9 +32,9 @@ void generate_response(const char* method, const char* path) {
     }
 
     if (strcmp(method, "GET") == 0) {
-       handle_get(path);
+       handle_get(path, client_info);
     } else if (strcmp(method, "POST") == 0) {
-        handle_post(path);
+        handle_post(path, client_info);
     } else {
         raise_http_error(BAD_REQUEST, &HSIZE, &BSIZE, header, body);
     }
@@ -88,6 +88,35 @@ void Send(int clientfd) {
     }
     
 }
+
+void send_chunked_response(int epfd, client_session_t* client_info) {
+    char buffer[BMAX];
+    ssize_t bytes_to_send = client_info->file_size - client_info->bytes_sent;
+    size_t chunk_size = (bytes_to_send > BMAX) ? BMAX : bytes_to_send;
+
+    ssize_t bytes_read = read(client_info->file_fd, buffer, chunk_size);
+    if (bytes_read < 0) {
+        printf("Error reading file\n");
+        close(client_info->fd);
+        free(client_info);
+        return;
+    }
+
+    ssize_t bytes_sent = send(client_info->fd, buffer, bytes_read, 0);
+    if (bytes_sent > 0) {
+        client_info->bytes_sent += bytes_sent;
+    }
+
+    if (client_info->bytes_sent >= client_info->file_size) {
+        close(client_info->file_fd);
+        close(client_info->fd);
+        free(client_info);
+    }
+}
+
+
+
+
 
 
 

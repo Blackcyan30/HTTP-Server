@@ -11,6 +11,8 @@
 #define NOT_FOUND 404
 #define ENTITY_TOO_LARGE 413
 #define INTERNAL_SERVER_ERROR 500
+#define MAX_EVENTS 10
+#define TIME_OUT -1
 
 
 

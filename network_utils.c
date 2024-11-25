@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <arpa/inet.h>
 #include "network_utils.h"
 
@@ -101,8 +102,14 @@ void* Malloc(size_t size) {
     return ptr;
 }
 
+void Epoll_ctl(int epfd, int op, int fd, struct epoll_event* event) {
+    int status = epoll_ctl(epfd, op, fd, event);
 
-
+    if (status < 0) {
+        print("epoll_ctl filed\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
 // ssize_t Read(int fd, void* buffer, size_t count) {
 //     ssize_t bytes_read = read(fd, buffer, count);
