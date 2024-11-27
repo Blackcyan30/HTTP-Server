@@ -3,7 +3,6 @@
 
 #include<stdio.h>
 
-
 void print_request(const char* request, size_t request_size) {
     printf("\n\nDebug Output: Raw Request Content:\n\n");
 

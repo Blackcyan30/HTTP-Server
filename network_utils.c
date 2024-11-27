@@ -64,14 +64,13 @@ void configure_socket(int sockfd) {
 /// @return 
 int Accept(int listenfd) {
     struct sockaddr_in client_addr;
-    socklen_t client_len;
+    socklen_t client_len = sizeof(struct sockaddr_in);
     
     memset(&client_addr, 0x00, sizeof(client_addr));
 
     int clientfd = accept(listenfd, (struct sockaddr*) &client_addr, &client_len);
-
     if (clientfd < 0) {
-        perror("accept failed");
+        perror("Accept failed");
         exit(EXIT_FAILURE);
     }
 
@@ -106,19 +105,18 @@ void Epoll_ctl(int epfd, int op, int fd, struct epoll_event* event) {
     int status = epoll_ctl(epfd, op, fd, event);
 
     if (status < 0) {
-        print("epoll_ctl filed\n");
+        printf("epoll_ctl filed\n");
         exit(EXIT_FAILURE);
     }
 }
 
-// ssize_t Read(int fd, void* buffer, size_t count) {
-//     ssize_t bytes_read = read(fd, buffer, count);
-//     if (bytes_read < 0) {
-//         perror("Read failed");
-//         close(fd);
-//         exit(EXIT_FAILURE);
-//     }
-//     printf("Read %zd bytes\n", bytes_read);
+ssize_t Read(int fd, void* buffer, size_t count) {
+    ssize_t bytes_read = read(fd, buffer, count);
+    if (bytes_read < 0) {
+        perror("Read failed");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
 
-//     return bytes_read;
-// }
+    return bytes_read;
+}

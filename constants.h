@@ -14,6 +14,4 @@
 #define MAX_EVENTS 10
 #define TIME_OUT -1
 
-
-
 #endif

@@ -3,11 +3,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "http_parser.h"
 #include "constants.h"
-#include <unistd.h>
-
-extern ssize_t request_size;
 
 /// @brief 
 /// @param request 
@@ -67,7 +65,7 @@ int parse_headers(const char* request, char* header_recieved, size_t headers_siz
 /// @param body_recieved 
 /// @param body_size 
 /// @return 
-int parse_body(const char* request, char* body_recieved, size_t body_size) {
+int parse_body(const char* request, ssize_t request_size, char* body_recieved, size_t body_size) {
     // +4 to skip the carraige return.
     char* body_start = strstr(request, "\r\n\r\n") + 4;
     if (!body_start) return -1;

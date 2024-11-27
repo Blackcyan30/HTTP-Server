@@ -10,24 +10,11 @@
 #include "constants.h"
 #include "http_errors.h"
 #include "http_method_handler.h"
+#include <sys/epoll.h>
 
-
-
-extern int HSIZE;
-extern int BSIZE;
-extern char request[RMAX+1];
-extern char header[HMAX];
-extern char body[BMAX];
-extern response_manager_t response_manager;
-
-/// @brief 
-/// @param method 
-/// @param path 
-/// @return void
 void generate_response(const char* method, const char* path, client_session_t* client_info) {
-    if (strstr(request, "\r\n\r\n") == NULL) {
-        // printf("Here in invalid req \n");
-        raise_http_error(400, &HSIZE, &BSIZE, header, body);
+    if (strstr(client_info->request, "\r\n\r\n") == NULL) {
+        raise_http_error(BAD_REQUEST, client_info);
         return;
     }
 
@@ -36,7 +23,7 @@ void generate_response(const char* method, const char* path, client_session_t* c
     } else if (strcmp(method, "POST") == 0) {
         handle_post(path, client_info);
     } else {
-        raise_http_error(BAD_REQUEST, &HSIZE, &BSIZE, header, body);
+        raise_http_error(BAD_REQUEST, client_info);
     }
 }
 
@@ -51,121 +38,45 @@ static void send_data(int clientfd, char buf[], int size) {
         amt = send(clientfd, buf + total, size - total, 0);
         if (amt < 0) break;
         total += amt;
-        // printf("Sent %zd bytes, total sent: %zd out of %d\n", amt, total, size);
     } while (total < size);
 }
 
-/// @brief 
-/// @param clientfd 
-void Send(int clientfd) {
-    if (response_manager.body_chunking_enabled) {
-        send_data(clientfd, header, HSIZE);
-
+void Send(client_session_t* client_info) {
+    if (client_info->body_chunking_enabled) {
         char buffer[BMAX];
-        // ssize_t bytes_read;
+        size_t remaining_bytes = client_info->file_size - client_info->bytes_sent;
+        size_t to_read = (remaining_bytes > BMAX) ? BMAX : remaining_bytes;
 
-        while (response_manager.bytes_sent < response_manager.file_size) {
-            size_t remaining_bytes = response_manager.file_size - response_manager.bytes_sent;
-            size_t to_read = (remaining_bytes > BMAX) ? BMAX : remaining_bytes;
-
-            ssize_t bytes_read = read(response_manager.file_fd, buffer, to_read);
-            
-            if (bytes_read < 0) {
-                printf("Failed to read file\n");
-                break;
-            }
-            send_data(clientfd, buffer, bytes_read);
-            response_manager.bytes_sent += bytes_read;
+        ssize_t bytes_read = read(client_info->file_fd, buffer, to_read);
+        
+        // Send header only if it is the first chunk.
+        if (client_info->bytes_sent == 0) {
+            send_data(client_info->fd, client_info->header, client_info->HSIZE);
         }
 
-        close(response_manager.file_fd);
+        if (bytes_read > 0) {
+            send_data(client_info->fd, buffer, bytes_read);
+            client_info->bytes_sent += bytes_read;
+
+            // Check if this is the last chunk
+            if (client_info->bytes_sent >= client_info->file_size) {
+                close(client_info->file_fd); // Close the file descriptor
+                epoll_ctl(client_info->epfd, EPOLL_CTL_DEL, client_info->fd, NULL); // Remove from epoll interest list
+                close(client_info->fd); // Close the socket
+                free(client_info); // Free the client session memory
+            }
+        } else {
+            // Handle read error or EOF
+            close(client_info->file_fd); // Close the file descriptor
+            epoll_ctl(client_info->epfd, EPOLL_CTL_DEL, client_info->fd, NULL); // Remove from epoll interest list
+            close(client_info->fd); // Close the socket
+            free(client_info); // Free the client session memory
+        }
     } else {
-        // printf("Sending header:\n%s", header);
-        send_data(clientfd, header, HSIZE);
-        // printf("Sending body:\n%s", body);
-        send_data(clientfd, body, BSIZE);
-        // printf("Body sent\n");
-    }
-    
-}
+        // Normal response (non-chunked)
+        send_data(client_info->fd, client_info->header, client_info->HSIZE);
+        send_data(client_info->fd, client_info->body, client_info->BSIZE);
 
-void send_chunked_response(int epfd, client_session_t* client_info) {
-    char buffer[BMAX];
-    ssize_t bytes_to_send = client_info->file_size - client_info->bytes_sent;
-    size_t chunk_size = (bytes_to_send > BMAX) ? BMAX : bytes_to_send;
-
-    ssize_t bytes_read = read(client_info->file_fd, buffer, chunk_size);
-    if (bytes_read < 0) {
-        printf("Error reading file\n");
-        close(client_info->fd);
-        free(client_info);
-        return;
-    }
-
-    ssize_t bytes_sent = send(client_info->fd, buffer, bytes_read, 0);
-    if (bytes_sent > 0) {
-        client_info->bytes_sent += bytes_sent;
-    }
-
-    if (client_info->bytes_sent >= client_info->file_size) {
-        close(client_info->file_fd);
-        close(client_info->fd);
-        free(client_info);
+        epoll_ctl(client_info->epfd, EPOLL_CTL_DEL, client_info->fd, NULL); // Remove from epoll interest list
     }
 }
-
-
-
-
-
-
-
-// void generate_response(const char* method, const char* path) {
-//     if (strstr(request, "\r\n\r\n") == NULL) {
-//         // printf("Here in invalid req \n");
-//         raise_http_error(400, &HSIZE, &BSIZE, header, body);
-//         return;
-//     }
-    
-//     if (strcmp(method, "GET") == 0 && strcmp(path, "/ping") == 0) {
-//         // printf("Here in ping\n");
-//         // Setting header for /ping.
-//         HSIZE = snprintf(header, HMAX,
-//             "HTTP/1.1 200 OK\r\n"
-//             "Content-Length: 4\r\n"
-//             "\r\n"
-//         );
-        
-//         // Setting body for /ping
-//         BSIZE = snprintf(body, BMAX, "pong");
-//     } else if (strcmp(method, "GET") == 0 && strcmp(path, "/echo") == 0) {
-//         char header_recieved[HMAX];
-//         int status = parse_headers(request, header_recieved, HMAX);
-
-//         if (status == -1) {
-//             raise_http_error(400, &HSIZE, &BSIZE, header, body);
-//             return;
-//         }
-        
-//         if (status == -2) {
-//             raise_http_error(413, &HSIZE, &BSIZE, header, body);
-//             return;
-//         }
-//         // if (strlen(headers) > HMAX) {
-//         //     raise_http_error(413, &HSIZE, &BSIZE, header, body);
-//         //     return;
-//         // }
-
-//         // Setting header to send
-//         HSIZE = snprintf(header, HMAX, 
-//             "HTTP/1.1 200 OK\r\n"
-//             "Content-Length: %zu\r\n\r\n",
-//             strlen(header_recieved)
-//         );
-        
-//         // Setting body to send
-//         BSIZE = snprintf(body, BMAX + 1, "%s", header_recieved);
-//     } else {
-//         raise_http_error(404, &HSIZE, &BSIZE, header, body);
-//     }
-// }

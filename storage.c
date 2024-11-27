@@ -55,6 +55,7 @@ void storage_clear(storage_t* storage) {
 }
 
 void storage_free(storage_t* storage) {
+    printf("Here in free storage\n");
     if (storage) {
         if (storage->data) {
             free(storage->data);

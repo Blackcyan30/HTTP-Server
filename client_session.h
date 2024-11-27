@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "constants.h"
 
 typedef struct {
     int fd;
     int epfd;
-    ssize_t bytes_sent;
+    size_t bytes_sent;
     int file_fd;
     size_t file_size;
     bool body_chunking_enabled;
@@ -17,7 +18,7 @@ typedef struct {
     char header[HMAX];
     int HSIZE;
     char body[BMAX];
-    int BSIZE
+    int BSIZE;
 } client_session_t;
 
 #endif
