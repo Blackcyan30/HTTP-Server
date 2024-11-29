@@ -1,4 +1,7 @@
+
 /// @file http_method_handler.c
+/// @brief Contains functions for handling HTTP methods.
+/// @details This file includes functions to handle various HTTP methods such as GET and POST requests.
 
 #include <stdio.h>
 #include <ctype.h>
@@ -16,6 +19,7 @@
 #include "network_utils.h"
 #include "http_method_handler.h"
 
+
 storage_t* server_storage = NULL;
 
 static void handle_ping(client_session_t* client_info);
@@ -25,6 +29,14 @@ static void handle_write(client_session_t* client_info);
 static void handle_common_get(const char* path, client_session_t* client_info);
 static void set_header(size_t content_length, client_session_t* client_info);
 
+/**
+ * @brief Handles GET requests.
+ * @details This function routes the GET request to the appropriate handler based on the requested path.
+ * @param path The requested path.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1) for each path comparison. Space complexity: O(1).
+ */
 void handle_get(const char* path, client_session_t* client_info) {
     if (strcmp(path, "/ping") == 0) {
         handle_ping(client_info);
@@ -37,6 +49,14 @@ void handle_get(const char* path, client_session_t* client_info) {
     }
 }
 
+/**
+ * @brief Handles POST requests.
+ * @details This function routes the POST request to the appropriate handler based on the requested path.
+ * @param path The requested path.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1) for each path comparison. Space complexity: O(1).
+ */
 void handle_post(const char* path, client_session_t* client_info) {
     if (strcmp(path, "/write") == 0) {
         handle_write(client_info);
@@ -45,6 +65,13 @@ void handle_post(const char* path, client_session_t* client_info) {
     }
 }
 
+/**
+ * @brief Handles the /ping request.
+ * @details This function sets the appropriate response for the /ping request.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 static void handle_ping(client_session_t* client_info) {
     // Setting header for /ping.
     client_info->HSIZE = snprintf(client_info->header, HMAX,
@@ -57,6 +84,13 @@ static void handle_ping(client_session_t* client_info) {
     client_info->BSIZE = snprintf(client_info->body, BMAX + 1, "pong");
 }
 
+/**
+ * @brief Handles the /echo request.
+ * @details This function parses the headers and sets the appropriate response for the /echo request.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the length of the request. Space complexity: O(1).
+ */
 static void handle_echo(client_session_t* client_info) {
     char header_recieved[HMAX];
     int status = parse_headers(client_info->request, header_recieved, HMAX);
@@ -82,6 +116,13 @@ static void handle_echo(client_session_t* client_info) {
     client_info->BSIZE = snprintf(client_info->body, BMAX + 1, "%s", header_recieved);
 }
 
+/**
+ * @brief Handles the /write request.
+ * @details This function writes data to the storage and sets the appropriate response for the /write request.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the size of the data written. Space complexity: O(1).
+ */
 static void handle_write(client_session_t* client_info) {
     int content_length = extract_content_length(client_info->request);
 
@@ -150,6 +191,13 @@ static void handle_write(client_session_t* client_info) {
     client_info->BSIZE = content_length;
 }
 
+/**
+ * @brief Handles the /read request.
+ * @details This function reads data from the storage and sets the appropriate response for the /read request.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the size of the data read. Space complexity: O(1).
+ */
 static void handle_read(client_session_t* client_info) {
     if (!server_storage || server_storage->length == 0) {
         client_info->HSIZE = snprintf(client_info->header, HMAX,
@@ -176,6 +224,14 @@ static void handle_read(client_session_t* client_info) {
     client_info->BSIZE = storage_read(server_storage, client_info->body, BMAX);
 }
 
+/**
+ * @brief Handles common GET requests.
+ * @details This function sets the appropriate response for common GET requests.
+ * @param path The requested path.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 static void handle_common_get(const char* path, client_session_t* client_info) {
     const char* filepath = path + 1;
 
@@ -214,6 +270,14 @@ static void handle_common_get(const char* path, client_session_t* client_info) {
     free(read_buff);
 }
 
+/**
+ * @brief Sets the response header.
+ * @details This function sets the response header with the specified content length.
+ * @param content_length The length of the content.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 static void set_header(size_t content_length, client_session_t* client_info) {
     client_info->HSIZE = snprintf(client_info->header, HMAX,
         "HTTP/1.1 200 OK\r\n"

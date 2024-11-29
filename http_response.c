@@ -12,6 +12,14 @@
 #include "http_method_handler.h"
 #include <sys/epoll.h>
 
+/**
+ * @brief Sends an HTTP response.
+ * @details This function constructs and sends an HTTP response based on the provided parameters.
+ * @param param1 The socket file descriptor to send the response to.
+ * @param param2 The HTTP status code to be sent in the response.
+ * @return void
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 void generate_response(const char* method, const char* path, client_session_t* client_info) {
     if (strstr(client_info->request, "\r\n\r\n") == NULL) {
         raise_http_error(BAD_REQUEST, client_info);
@@ -27,10 +35,16 @@ void generate_response(const char* method, const char* path, client_session_t* c
     }
 }
 
-/// @brief 
-/// @param clientfd 
-/// @param buf 
-/// @param size 
+/**
+ * @file http_response.c
+ * @brief Handles HTTP responses.
+ * @details file contains functions and definitions for creating and managing
+ * HTTP responses.
+ * @param param1 The first parameter, typically used for specifying the response code.
+ * @param param2 The second parameter, typically used for specifying the response body.
+ * @return Returns an integer indicating success (0) or failure (non-zero).
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 static void send_data(int clientfd, char buf[], int size) {
     ssize_t amt, total = 0;
 
@@ -41,6 +55,13 @@ static void send_data(int clientfd, char buf[], int size) {
     } while (total < size);
 }
 
+/**
+ * @brief Sends the HTTP response to the client.
+ * @details This function handles both chunked and non-chunked responses. For chunked responses, it reads data from the file in chunks and sends it to the client. For non-chunked responses, it sends the header and body directly.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the size of the response. Space complexity: O(1).
+ */
 void Send(client_session_t* client_info) {
     if (client_info->body_chunking_enabled) {
         char buffer[BMAX];

@@ -1,4 +1,6 @@
 /// @file server_config.c
+/// @brief Contains functions for server configuration and client handling.
+/// @details This file includes functions to create a listening socket, accept client connections, and handle client requests.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +20,13 @@
 #include "client_session.h"
 #include "server_config.h"
 
+/**
+ * @brief Creates a listening socket on the specified port.
+ * @details This function creates a socket, configures it, binds it to the specified port, and starts listening for incoming connections.
+ * @param port The port number on which the server will listen for incoming connections.
+ * @return Returns the file descriptor of the listening socket.
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 int create_listening_socket(int port) {
     // Creating the socket and setting socket option.
     int listenfd = Socket(AF_INET, SOCK_STREAM, 0);
@@ -35,6 +44,14 @@ int create_listening_socket(int port) {
     return listenfd;
 }
 
+/**
+ * @brief Accepts a new client connection.
+ * @details This function accepts a new client connection and adds it to the epoll instance for monitoring.
+ * @param epfd The epoll file descriptor.
+ * @param listenfd The file descriptor of the listening socket.
+ * @return This function does not return a value.
+ * @note Time complexity: O(1). Space complexity: O(1).
+ */
 void accept_client(int epfd, int listenfd) {
     int clientfd = Accept(listenfd);
 
@@ -53,6 +70,14 @@ void accept_client(int epfd, int listenfd) {
     Epoll_ctl(epfd, EPOLL_CTL_ADD, clientfd, &event);
 }
 
+/**
+ * @brief Processes a client request.
+ * @details This function receives data from the client, processes the request, and sends the appropriate response.
+ * @param epfd The epoll file descriptor.
+ * @param client_info Pointer to the client session information.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the size of the request. Space complexity: O(1).
+ */
 void process_client_request(client_session_t* client_info) {
     memset(client_info->request, 0, sizeof(client_info->request));
 
@@ -96,6 +121,13 @@ void process_client_request(client_session_t* client_info) {
 
 }
 
+/**
+ * @brief Runs the server on the specified port.
+ * @details This function initializes the server, creates an epoll instance, and enters an event loop to handle incoming connections and client requests.
+ * @param port The port number on which the server will listen for incoming connections.
+ * @return This function does not return a value.
+ * @note Time complexity: O(n) where n is the number of events. Space complexity: O(1).
+ */
 void run_server(int port) {
     int listenfd = create_listening_socket(port);
 
