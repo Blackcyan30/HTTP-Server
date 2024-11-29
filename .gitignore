@@ -1,0 +1,8 @@
+# Ignore PDF files
+*.pdf
+
+# Ignore .vscode directory
+.vscode/
+
+# Ignore .github directory
+.github/
